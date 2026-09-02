@@ -65,7 +65,7 @@ final class DevBillingParties {
                 PARTY_ID_PREFIX + normalized,
                 "Dostawca " + normalized + " (invoicing-dev)",
                 "ul. Dostawcza " + (1 + hash % 99),
-                String.format("%02d-%03d", hash % 100, hash % 1000),
+                String.format(Locale.ROOT, "%02d-%03d", hash % 100, hash % 1000),
                 CITIES[hash % CITIES.length],
                 "PL",
                 nip(hash),
@@ -80,7 +80,7 @@ final class DevBillingParties {
     /** Ten digits ending with the NIP check digit, so a synthesised number looks real. */
     static String nip(int seed) {
         for (int attempt = 0; ; attempt++) {
-            String nineDigits = String.format("%09d", Math.floorMod(seed + attempt, 1_000_000_000));
+            String nineDigits = String.format(Locale.ROOT, "%09d", Math.floorMod(seed + attempt, 1_000_000_000));
             int checkDigit = checkDigit(nineDigits);
             if (checkDigit != 10) {
                 return nineDigits + checkDigit;

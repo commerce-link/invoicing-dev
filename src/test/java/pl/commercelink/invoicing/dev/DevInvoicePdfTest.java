@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -72,5 +73,31 @@ class DevInvoicePdfTest {
                 StandardCharsets.ISO_8859_1);
 
         assertThat(pdf).contains("(pierwsza) Tj").contains("(druga) Tj").contains("(trzecia) Tj");
+    }
+
+    @Test
+    void rendersValidXrefOffsetsUnderNonLatinDigitLocale() {
+        Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-SA-u-nu-arab"));
+            String pdf = new String(DevInvoicePdf.render(List.of("linia")), StandardCharsets.ISO_8859_1);
+            int entriesStart = pdf.indexOf("0000000000 65535 f \n");
+
+            for (int object = 0; object <= 5; object++) {
+                String entry = pdf.substring(entriesStart + object * 20, entriesStart + (object + 1) * 20);
+                String offsetPart = entry.substring(0, 10);
+                for (char c : offsetPart.toCharArray()) {
+                    assertThat(c).isGreaterThanOrEqualTo('0').isLessThanOrEqualTo('9');
+                }
+            }
+
+            for (int object = 1; object <= 5; object++) {
+                String entry = pdf.substring(entriesStart + object * 20, entriesStart + (object + 1) * 20);
+                int offset = Integer.parseInt(entry.substring(0, 10));
+                assertThat(pdf.substring(offset)).startsWith(object + " 0 obj");
+            }
+        } finally {
+            Locale.setDefault(original);
+        }
     }
 }

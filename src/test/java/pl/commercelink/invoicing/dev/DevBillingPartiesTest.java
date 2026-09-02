@@ -3,6 +3,8 @@ package pl.commercelink.invoicing.dev;
 import org.junit.jupiter.api.Test;
 import pl.commercelink.invoicing.api.BillingParty;
 
+import java.util.Locale;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DevBillingPartiesTest {
@@ -107,6 +109,21 @@ class DevBillingPartiesTest {
             assertThat(isValidNip(DevBillingParties.nip(seed)))
                     .as("seed %d produced %s", seed, DevBillingParties.nip(seed))
                     .isTrue();
+        }
+    }
+
+    @Test
+    void generatesValidPostalCodeAndNipUnderNonLatinDigitLocale() {
+        Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-SA-u-nu-arab"));
+            BillingParty party = DevBillingParties.fromKey("TestSupplier", "");
+
+            assertThat(party.postalCode()).matches("\\d{2}-\\d{3}");
+            assertThat(party.taxNo()).matches("\\d{10}");
+            assertThat(isValidNip(party.taxNo())).isTrue();
+        } finally {
+            Locale.setDefault(original);
         }
     }
 

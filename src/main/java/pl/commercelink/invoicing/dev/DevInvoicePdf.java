@@ -3,6 +3,7 @@ package pl.commercelink.invoicing.dev;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Builds a minimal but valid single-page PDF, so a mailed attachment opens in a viewer instead of
@@ -36,7 +37,7 @@ final class DevInvoicePdf {
         int xrefOffset = pdf.length();
         pdf.append("xref\n0 ").append(objects.size() + 1).append('\n').append(XREF_FREE_ENTRY);
         for (int offset : offsets) {
-            pdf.append(String.format("%010d 00000 n \n", offset));
+            pdf.append(String.format(Locale.ROOT, "%010d 00000 n \n", offset));
         }
         pdf.append("trailer\n<< /Size ").append(objects.size() + 1).append(" /Root 1 0 R >>\n")
                 .append("startxref\n").append(xrefOffset).append("\n%%EOF\n");
