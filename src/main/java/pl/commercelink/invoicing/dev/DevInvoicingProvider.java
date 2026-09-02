@@ -32,20 +32,38 @@ public class DevInvoicingProvider implements InvoicingProvider {
     public Invoice createInvoice(InvoiceRequest request) {
         int sequence = store.nextSequence();
         List<InvoicePosition> positions = request.positions() != null ? request.positions() : List.of();
-        double net = positions.stream().mapToDouble(position -> position.totalPrice().netValue()).sum();
-        double gross = positions.stream().mapToDouble(position -> position.totalPrice().grossValue()).sum();
         LocalDate sellDate = request.sellDate() != null ? request.sellDate() : LocalDate.now();
         String id = SALE_ID_PREFIX + sequence;
+
+        Price amount;
+        boolean paid;
+        if (!positions.isEmpty()) {
+            double net = positions.stream().mapToDouble(position -> position.totalPrice().netValue()).sum();
+            double gross = positions.stream().mapToDouble(position -> position.totalPrice().grossValue()).sum();
+            amount = new Price(net, gross);
+            paid = gross > 0 && request.paidAmount() >= gross;
+        } else if (request.invoiceKind() == InvoiceKind.Advance) {
+            // Advance requests carry no positions: the app fills in paidAmount instead.
+            amount = Price.fromGross(request.paidAmount());
+            paid = request.paidAmount() > 0;
+        } else if (request.invoiceKind() == InvoiceKind.Final) {
+            // Final requests carry no positions either: the app fills in leftToPay instead.
+            amount = Price.fromGross(request.leftToPay());
+            paid = false;
+        } else {
+            amount = new Price(0, 0);
+            paid = false;
+        }
 
         Invoice invoice = new Invoice(
                 id,
                 numberPrefix(request.invoiceKind()) + "/" + sequence + "/" + sellDate.getYear(),
                 request.orderId(),
-                new Price(net, gross),
+                amount,
                 "https://invoicing-dev.local/invoices/" + id,
                 Price.DEFAULT_CURRENCY,
                 1.0,
-                gross > 0 && request.paidAmount() >= gross,
+                paid,
                 sellDate.plusDays(request.paymentTerms()),
                 positions,
                 DevBillingParties.costCenter(),

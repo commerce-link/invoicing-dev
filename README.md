@@ -13,8 +13,9 @@ counterpart of `invoicing-fakturownia` and `invoicing-saldeosmart`, which talk t
   domain concept.
 - **Sale invoices** (`createInvoice`, plus `InvoiceDirection.Sale` lookups): created on demand and
   kept for this JVM's lifetime. Numbers run `FV|FP|FZ|FK|OF|PA / <sequence> / <year>` by invoice
-  kind. The counter starts from the wall clock, so a restart does not re-issue numbers that are
-  already sitting on orders.
+  kind. The counter starts from the wall clock, so numbering stays monotonic across a restart on
+  the same day — but a restart after midnight starts from a lower value again and can re-issue
+  numbers already sitting on the previous day's orders.
 - **Purchase invoices** (`InvoiceDirection.Purchase`): synthesised from the supplier's order number,
   because no application action creates them. Three positions — goods, transport, payment handling —
   and the same input always yields the same invoice. The transport position is exactly `15.00`,

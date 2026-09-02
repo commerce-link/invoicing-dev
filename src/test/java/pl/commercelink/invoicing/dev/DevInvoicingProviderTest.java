@@ -89,6 +89,35 @@ class DevInvoicingProviderTest {
     }
 
     @Test
+    void createInvoiceForAdvanceRequestUsesPaidAmountAsGrossAndMarksItPaid() {
+        Invoice invoice = provider.createInvoice(InvoiceRequest.advanceInvoice()
+                .orderId("order-1")
+                .wmsOrderNo("WMS-1")
+                .sellDate(LocalDate.of(2026, 9, 2))
+                .billingParty(buyer())
+                .paidAmount(300.00)
+                .build());
+
+        assertThat(invoice.positions()).isEmpty();
+        assertThat(invoice.amount().grossValue()).isEqualTo(300.00);
+        assertThat(invoice.paid()).isTrue();
+    }
+
+    @Test
+    void createInvoiceForFinalRequestUsesLeftToPayAsGrossAndIsNeverMarkedPaid() {
+        Invoice invoice = provider.createInvoice(InvoiceRequest.finalInvoice()
+                .orderId("order-1")
+                .wmsOrderNo("WMS-1")
+                .billingParty(buyer())
+                .leftToPay(150.00)
+                .build());
+
+        assertThat(invoice.positions()).isEmpty();
+        assertThat(invoice.amount().grossValue()).isEqualTo(150.00);
+        assertThat(invoice.paid()).isFalse();
+    }
+
+    @Test
     void createInvoiceDerivesPaymentDateFromSellDateAndTerms() {
         Invoice invoice = provider.createInvoice(InvoiceRequest.standardInvoice()
                 .invoiceKind(InvoiceKind.Standard)

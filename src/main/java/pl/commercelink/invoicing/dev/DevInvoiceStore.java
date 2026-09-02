@@ -16,7 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>Deliberately not persisted: the app never reads a sale invoice back (there is no
  * {@code InvoiceDirection.Sale} lookup anywhere) and purchase invoices are synthesised
  * deterministically, so a restart loses nothing worth keeping. The one thing that would matter is
- * numbering, which is why the counter starts from the wall clock instead of zero.
+ * numbering, which is why the counter starts from the wall clock instead of zero: this keeps
+ * numbers monotonic across a restart within the same day, but a restart after midnight starts
+ * from a lower value again and can re-issue numbers already sitting on the previous day's orders.
  */
 class DevInvoiceStore {
 
