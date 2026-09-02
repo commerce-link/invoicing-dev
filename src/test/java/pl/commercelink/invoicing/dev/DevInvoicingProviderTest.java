@@ -176,6 +176,44 @@ class DevInvoicingProviderTest {
         assertThat(pdf).startsWith("%PDF-").contains("nope");
     }
 
+    @Test
+    void purchaseLookupByIdReturnsSynthesisedSupplierInvoice() {
+        Invoice invoice = provider.fetchInvoiceById("dev-pur-ZS/104520/2026", InvoiceDirection.Purchase);
+
+        assertThat(invoice).isNotNull();
+        assertThat(invoice.number()).startsWith("FZ/");
+        assertThat(invoice.positions()).hasSize(3);
+    }
+
+    @Test
+    void purchaseLookupByOrderIdReturnsExactlyOneInvoice() {
+        assertThat(provider.fetchInvoicesByOrderId("ZS/104520/2026", InvoiceDirection.Purchase))
+                .hasSize(1);
+    }
+
+    @Test
+    void purchaseLookupsHonourTheNoInvoiceMarker() {
+        assertThat(provider.fetchInvoiceById("ZS/NOINV/1/2026", InvoiceDirection.Purchase)).isNull();
+        assertThat(provider.fetchInvoicesByOrderId("ZS/NOINV/1/2026", InvoiceDirection.Purchase)).isEmpty();
+    }
+
+    @Test
+    void purchaseAndSaleLookupsDoNotLeakIntoEachOther() {
+        Invoice sale = provider.createInvoice(standardRequest("order-1"));
+
+        assertThat(provider.fetchInvoiceById(sale.id(), InvoiceDirection.Purchase).id())
+                .isNotEqualTo(sale.id());
+        assertThat(provider.fetchInvoiceById("dev-pur-ZS/104520/2026", InvoiceDirection.Sale)).isNull();
+    }
+
+    @Test
+    void sellerShortcutStaysBlankSoDeliveryProviderIsNeverOverwritten() {
+        Invoice invoice = provider.fetchInvoiceById("dev-pur-ZS/104520/2026", InvoiceDirection.Purchase);
+
+        assertThat(invoice.seller().hasShortcut()).isFalse();
+        assertThat(provider.fetchBillingPartyById(invoice.seller().id()).hasShortcut()).isFalse();
+    }
+
     private static InvoiceRequest standardRequest(String orderId) {
         return InvoiceRequest.standardInvoice()
                 .invoiceKind(InvoiceKind.Standard)

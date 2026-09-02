@@ -75,7 +75,7 @@ public class DevInvoicingProvider implements InvoicingProvider {
             return null;
         }
         if (direction == InvoiceDirection.Purchase) {
-            return null; // Task 4 wires in DevPurchaseInvoices.
+            return DevPurchaseInvoices.byInvoiceId(invoiceId);
         }
         return store.findById(invoiceId);
     }
@@ -86,7 +86,8 @@ public class DevInvoicingProvider implements InvoicingProvider {
             return List.of();
         }
         if (direction == InvoiceDirection.Purchase) {
-            return List.of(); // Task 4 wires in DevPurchaseInvoices.
+            Invoice invoice = DevPurchaseInvoices.byOrderId(orderId);
+            return invoice != null ? List.of(invoice) : List.of();
         }
         return store.findByOrderId(orderId);
     }
